@@ -283,6 +283,14 @@ The fragments below allow to select the desired implementation of the permutatio
         <h>lib/low/KeccakP-1600/AVR8/KeccakP-1600-SnP.h</h>
     </fragment>
 
+    <fragment name="ARMv8Asha3" inherits="K1600 optimized">
+        <c>lib/low/KeccakP-1600/ARMv8Asha3/KeccakP-1600-opt64.c</c>
+        <s gcc="-march=armv8.4-a+sha3">lib/low/KeccakP-1600/ARMv8Asha3/KeccakP-1600-ARMv8Asha3.S</s>
+        <c>lib/low/KeccakP-1600/ARMv8Asha3/KeccakP-1600-runtimeDispatch.c</c>
+        <h>lib/low/KeccakP-1600/ARMv8Asha3/KeccakP-1600-SnP.h</h>
+    </fragment>
+
+
     <!-- Keccak-p[1600]×2 -->
 
     <fragment name="K1600x2">
