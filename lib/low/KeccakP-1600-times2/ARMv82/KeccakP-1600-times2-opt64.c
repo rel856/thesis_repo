@@ -126,8 +126,7 @@ void KeccakP1600_opt64_AddByte(void *state, unsigned char byte, unsigned int off
                 unsigned int _bytesInLane = SnP_laneLengthInBytes - _offsetInLane; \
                 if (_bytesInLane > _sizeLeft) \
                     _bytesInLane = _sizeLeft; \
-                SnP_AddBytesInLane(state, _lanePosition, _curData, _offsetInLane, _bytesInLane); \
-                _sizeLeft -= _bytesInLane; \
+                SnP_AddBytesInLane(state, _lanePosition, _curData, _offsetInLane, _bytesInLane); \esInLane; \
                 _lanePosition++; \
                 _offsetInLane = 0; \
                 _curData += _bytesInLane; \
@@ -142,7 +141,7 @@ void KeccakP1600_opt64_AddBytes(void *state, const unsigned char *data, unsigned
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_OverwriteBytes(void *state, const unsigned char *data, unsigned int offset, unsigned int length)
+void KeccakP1600times2_OverwriteBytes(KeccakP1600times2_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length)
 {
     #if DEBUG
     assert(offset < 200);
@@ -153,7 +152,7 @@ void KeccakP1600_OverwriteBytes(void *state, const unsigned char *data, unsigned
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_ExtractBytesInLane(const void *state, unsigned int lanePosition, unsigned char *data, unsigned int offset, unsigned int length)
+void KeccakP1600_opt64_ExtractBytesInLane(const KeccakP1600times2_ARMv8Asha3 *state, unsigned int lanePosition, unsigned char *data, unsigned int offset, unsigned int length)
 {
     uint64_t lane = ((uint64_t*)state)[lanePosition];
     {
@@ -165,7 +164,7 @@ void KeccakP1600_opt64_ExtractBytesInLane(const void *state, unsigned int lanePo
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_ExtractLanes(const void *state, unsigned char *data, unsigned int laneCount)
+void KeccakP1600_opt64_ExtractLanes(const KeccakP1600times2_ARMv8Asha3 *state, unsigned char *data, unsigned int laneCount)
 {
     memcpy(data, state, laneCount*8);
 }
@@ -200,7 +199,7 @@ void KeccakP1600_opt64_ExtractLanes(const void *state, unsigned char *data, unsi
         } \
     }
 
-void KeccakP1600_opt64_ExtractBytes(const void *state, unsigned char *data, unsigned int offset, unsigned int length)
+void KeccakP1600_opt64_ExtractBytes(const KeccakP1600times2_ARMv8Asha3 *state, unsigned char *data, unsigned int offset, unsigned int length)
 {
     SnP_ExtractBytes(state, data, offset, length, KeccakP1600_opt64_ExtractLanes, KeccakP1600_opt64_ExtractBytesInLane, 8);
 }
