@@ -219,22 +219,22 @@ const char * KeccakP1600_GetImplementation() {
     }
 }
 
-void KeccakP1600_Initialize(void *state) {
+void KeccakP1600_Initialize(KeccakP1600_ARMv8Asha3 *state) {
     KangarooTwelve_SetArmProcessorCapabilities();
     KeccakP1600_opt64_Initialize(state);  // Both use same initialization
 }
 
-void KeccakP1600_AddByte(void *state, unsigned char data, unsigned int offset) {
+void KeccakP1600_AddByte(KeccakP1600_ARMv8Asha3 *state, unsigned char data, unsigned int offset) {
     KangarooTwelve_SetArmProcessorCapabilities();
     KeccakP1600_opt64_AddByte(state, data, offset);  // Both use same AddByte
 }
 
-void KeccakP1600_AddBytes(void *state, const unsigned char *data, unsigned int offset, unsigned int length) {
+void KeccakP1600_AddBytes(KeccakP1600_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length) {
     KangarooTwelve_SetArmProcessorCapabilities();
     KeccakP1600_opt64_AddBytes(state, data, offset, length);  // Both use same AddBytes
 }
 
-void KeccakP1600_Permute_12rounds(void *state) {
+void KeccakP1600_Permute_12rounds(KeccakP1600_ARMv8Asha3 *state) {
     KangarooTwelve_SetArmProcessorCapabilities();
     if (K12_enableARM_SHA3) {
         KeccakP1600_ARMv8Asha3_Permute_12rounds(state);
@@ -243,7 +243,7 @@ void KeccakP1600_Permute_12rounds(void *state) {
     }
 }
 
-void KeccakP1600_ExtractBytes(const void *state, unsigned char *data, unsigned int offset, unsigned int length) {
+void KeccakP1600_ExtractBytes(const KeccakP1600_ARMv8Asha3 *state, unsigned char *data, unsigned int offset, unsigned int length) {
     KangarooTwelve_SetArmProcessorCapabilities();
     KeccakP1600_opt64_ExtractBytes(state, data, offset, length);  // Both use same ExtractBytes
 }

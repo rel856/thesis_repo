@@ -21,7 +21,7 @@ Please refer to the XKCP for more details.
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <KeccakP-1600-SnP.h>
+#include <KeccakP-1600-times2-SnP.h>
 
 // const char * KeccakP1600_GetImplementation()
 // {
@@ -93,6 +93,20 @@ void KeccakP1600_opt64_AddByte(void *state, unsigned char byte, unsigned int off
 
 /* ---------------------------------------------------------------- */
 
+// void KeccakP1600_ExtractAndAddBytes(const void *state, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length)
+// {
+//     unsigned int i;
+
+//     #if DEBUG
+//     assert(offset < 200);
+//     assert(offset+length <= 200);
+//     #endif
+//     for(i=0; i<length; i++)
+//         output[i] = input[i] ^ state->A[offset+i];
+// }
+
+/* ---------------------------------------------------------------- */
+
 #define SnP_AddBytes(state, data, offset, length, SnP_AddLanes, SnP_AddBytesInLane, SnP_laneLengthInBytes) \
     { \
         if ((offset) == 0) { \
@@ -124,6 +138,17 @@ void KeccakP1600_opt64_AddByte(void *state, unsigned char byte, unsigned int off
 void KeccakP1600_opt64_AddBytes(void *state, const unsigned char *data, unsigned int offset, unsigned int length)
 {
     SnP_AddBytes(state, data, offset, length, KeccakP1600_opt64_AddLanes, KeccakP1600_opt64_AddBytesInLane, 8);
+}
+
+/* ---------------------------------------------------------------- */
+
+void KeccakP1600_OverwriteBytes(void *state, const unsigned char *data, unsigned int offset, unsigned int length)
+{
+    #if DEBUG
+    assert(offset < 200);
+    assert(offset+length <= 200);
+    #endif
+    memcpy(state->A+offset, data, length);
 }
 
 /* ---------------------------------------------------------------- */

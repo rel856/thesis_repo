@@ -34,7 +34,7 @@ typedef struct {
 
 typedef KeccakP1600_ARMv8Asha3 KeccakP1600_state;
 
-// const char *KeccakP1600_GetImplementation(); // call from runtime Dispatch instead of defining here
+const char *KeccakP1600_GetImplementation(); // call from runtime Dispatch instead of defining here
 #define KeccakP1600_GetFeatures()                   (SnP_Feature_Main)
 
 /* Keccak-p[1600] */
@@ -50,6 +50,8 @@ void KeccakP1600_AddBytes(KeccakP1600_ARMv8Asha3 *state, const unsigned char *da
 void KeccakP1600_OverwriteBytes(KeccakP1600_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length);
 void KeccakP1600_OverwriteWithZeroes(KeccakP1600_ARMv8Asha3 *state, unsigned int byteCount);
 void KeccakP1600_Permute_Nrounds(KeccakP1600_ARMv8Asha3 *state, unsigned int nrounds);
+void KeccakP1600_Permute_4rounds(KeccakP1600_ARMv8Asha3 *state);
+void KeccakP1600_Permute_6rounds(KeccakP1600_ARMv8Asha3 *state);
 void KeccakP1600_Permute_12rounds(KeccakP1600_ARMv8Asha3 *state);
 void KeccakP1600_Permute_24rounds(KeccakP1600_ARMv8Asha3 *state);
 void KeccakP1600_ExtractBytes(const KeccakP1600_ARMv8Asha3 *state, unsigned char *data, unsigned int offset, unsigned int length);
@@ -79,22 +81,13 @@ size_t KeccakP1600_12rounds_FastLoop_Absorb(KeccakP1600_ARMv8Asha3 *state, unsig
 // int KeccakP1600times8_IsAvailable();
 // const char * KeccakP1600times8_GetImplementation();
 
-// #define KeccakF1600_FastLoop_Absorb(...)                0
-// #define KeccakP1600_12rounds_FastLoop_Absorb(...)       0
-// #define KeccakP1600_ODDuplexingFastInOut(...)           0
-// #define KeccakP1600_12rounds_ODDuplexingFastInOut(...)  0
-// #define KeccakP1600_ODDuplexingFastOut(...)             0
-// #define KeccakP1600_12rounds_ODDuplexingFastOut(...)    0
-// #define KeccakP1600_ODDuplexingFastIn(...)              0
-// #define KeccakP1600_12rounds_ODDuplexingFastIn(...)     0
-
-#define KeccakF1600times2_FastLoop_Absorb(...)          0
-#define KeccakP1600times2_12rounds_FastLoop_Absorb(...) 0
-
-#define KeccakP1600times2_KravatteCompress(...)         0
-#define KeccakP1600times2_KravatteExpand(...)           0
-
-#define KeccakP1600times2_KT128ProcessLeaves(...)
-#define KeccakP1600times2_KT256ProcessLeaves(...)
+#define KeccakF1600_FastLoop_Absorb(...)                0
+#define KeccakP1600_12rounds_FastLoop_Absorb(...)       0
+#define KeccakP1600_ODDuplexingFastInOut(...)           0
+#define KeccakP1600_12rounds_ODDuplexingFastInOut(...)  0
+#define KeccakP1600_ODDuplexingFastOut(...)             0
+#define KeccakP1600_12rounds_ODDuplexingFastOut(...)    0
+#define KeccakP1600_ODDuplexingFastIn(...)              0
+#define KeccakP1600_12rounds_ODDuplexingFastIn(...)     0
 
 #endif

@@ -22,7 +22,7 @@ ARM CPU feature detection adapted from libaegis by Frank Denis.
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "KeccakP-1600-SnP.h"
+#include "KeccakP-1600-times2-SnP.h"
 
 #ifdef KeccakP1600_disableParallelism
 #undef KeccakP1600_enable_simd_options

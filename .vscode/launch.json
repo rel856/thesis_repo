@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/aurelionandika/Documents/uni/2526/bthes/temp_dir/XKCP/lib/low/KeccakP-1600-times2/ARMv82",
+      "program": "/Users/aurelionandika/Documents/uni/2526/bthes/temp_dir/XKCP/lib/low/KeccakP-1600-times2/ARMv82/build/Debug/outDebug"
+    }
+  ]
+}

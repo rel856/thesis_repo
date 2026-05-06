@@ -35,7 +35,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
   * that will be included by the users of the corresponding permutation.
   */
 
-/** Administrative funct`ions
+/** Administrative functions
  */
 
 /** Function that returns a description of the implementation.
