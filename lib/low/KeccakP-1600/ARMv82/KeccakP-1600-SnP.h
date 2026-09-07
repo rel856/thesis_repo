@@ -47,6 +47,7 @@ const char *KeccakP1600_GetImplementation(); // call from runtime Dispatch inste
 void KeccakP1600_Initialize(KeccakP1600_ARMv8Asha3 *state);
 void KeccakP1600_AddByte(KeccakP1600_ARMv8Asha3 *state, unsigned char data, unsigned int offset);
 void KeccakP1600_AddBytes(KeccakP1600_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length);
+void KeccakP1600_ExtractAndAddBytes(const KeccakP1600_ARMv8Asha3 *state, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length);
 void KeccakP1600_OverwriteBytes(KeccakP1600_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length);
 void KeccakP1600_OverwriteWithZeroes(KeccakP1600_ARMv8Asha3 *state, unsigned int byteCount);
 void KeccakP1600_Permute_Nrounds(KeccakP1600_ARMv8Asha3 *state, unsigned int nrounds);

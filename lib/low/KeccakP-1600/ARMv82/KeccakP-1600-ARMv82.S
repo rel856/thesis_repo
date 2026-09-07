@@ -35,6 +35,7 @@ iotas:
     .quad   0x0000000000000088
     .quad   0x0000000080008009
     .quad   0x000000008000000a
+
 iotas12:
     .quad   0x000000008000808b
     .quad   0x800000000000008b
@@ -48,6 +49,7 @@ iotas12:
     .quad   0x8000000000008080
     .quad   0x0000000080000001
     .quad   0x8000000080008008
+
 iotas6:
     .quad   0x000000000000800a
     .quad   0x800000008000000a
@@ -55,6 +57,7 @@ iotas6:
     .quad   0x8000000000008080
     .quad   0x0000000080000001
     .quad   0x8000000080008008
+
 iotas4:
     .quad   0x8000000080008081
     .quad   0x8000000000008080
@@ -63,7 +66,38 @@ iotas4:
 .ifndef old_gas_syntax
 .size   iotas,.-iotas
 .endif
- 
+
+////////////////////////////////////////////////////////////
+// permutation entry points
+// variables:
+//   x9  = number of rounds (4,6,12,24)
+//   x10 = iotas (4,6,12,24)
+////////////////////////////////////////////////////////////
+
+.ifndef old_gas_syntax
+.type   KeccakP1600_ARMV8Asha3_Permute_4rounds_internal,%function
+.endif
+KeccakP1600_ARMv8Asha3_Permute_4rounds_internal:
+.balign 32
+    mov x9,#4
+    adr x10,iotas4
+    b   .Loop_ce
+.ifndef old_gas_syntax
+.size   KeccakP1600_ARMv8Asha3_Permute_4rounds_internal,.-KeccakP1600_ARMv8Asha3_Permute_4rounds_internal
+.endif
+
+.ifndef old_gas_syntax
+.type   KeccakP1600_ARMv8Asha3_Permute_6rounds_internal,%function
+.endif
+KeccakP1600_ARMv8Asha3_Permute_6rounds_internal:
+.balign 32
+    mov x9,#6
+    adr x10,iotas6
+    b   .Loop_ce
+.ifndef old_gas_syntax
+.size   KeccakP1600_ARMv8Asha3_Permute_6rounds_internal,.-KeccakP1600_ARMv8Asha3_Permute_6rounds_internal
+.endif
+
 .ifndef old_gas_syntax
 .type   KeccakP1600_ARMv8Asha3_Permute_12rounds_internal,%function
 .endif
@@ -72,7 +106,103 @@ KeccakP1600_ARMv8Asha3_Permute_12rounds_internal:
     mov x9,#12
     adr x10,iotas12
     b   .Loop_ce
-.balign 16
+.ifndef old_gas_syntax
+.size   KeccakP1600_ARMv8Asha3_Permute_12rounds_internal,.-KeccakP1600_ARMv8Asha3_Permute_12rounds_internal
+.endif
+
+.ifndef old_gas_syntax
+.type   KeccakP1600_ARMv8Asha3_Permute_24rounds_internal,%function
+.endif
+KeccakP1600_ARMv8Asha3_Permute_24rounds_internal:
+.balign 32
+    mov x9,#24
+    adr x10,iotas
+    b   .Loop_ce
+.ifndef old_gas_syntax
+.size   KeccakP1600_ARMv8Asha3_Permute_24rounds_internal,.-KeccakP1600_ARMv8Asha3_Permute_24rounds_internal
+.endif
+
+KeccakP1600_ARMv8Asha3_Permute_Nrounds_internal:
+    mov     x9, x1
+    adr     x10, iotas
+    mov     x11, #24
+    sub     x11, x11, x9
+    add     x10, x10, x11, lsl #3
+    b       .Loop_ce
+
+////////////////////////////////////////////////////////////
+// permutation macro
+// x0 = state pointer
+////////////////////////////////////////////////////////////
+
+.macro KeccakP1600_ARMv8Asha3_Permute name, internal
+
+.globl  \name
+.globl  _\name
+.ifndef old_gas_syntax
+.type   \name,%function
+.endif
+
+\name:
+_\name:
+.balign 32
+    stp x29,x30,[sp,#-80]!
+    add x29,sp,#0
+
+    stp d8,d9,[sp,#16]      // per ABI requirement
+    stp d10,d11,[sp,#32]
+    stp d12,d13,[sp,#48]
+    stp d14,d15,[sp,#64]
+
+    ldp d0,d1,[x0,#8*0]
+    ldp d2,d3,[x0,#8*2]
+    ldp d4,d5,[x0,#8*4]
+    ldp d6,d7,[x0,#8*6]
+    ldp d8,d9,[x0,#8*8]
+    ldp d10,d11,[x0,#8*10]
+    ldp d12,d13,[x0,#8*12]
+    ldp d14,d15,[x0,#8*14]
+    ldp d16,d17,[x0,#8*16]
+    ldp d18,d19,[x0,#8*18]
+    ldp d20,d21,[x0,#8*20]
+    ldp d22,d23,[x0,#8*22]
+    ldr d24,[x0,#8*24]
+
+    bl  \internal
+
+    ldr x30,[sp,#8]
+
+    stp d0,d1,[x0,#8*0]
+    stp d2,d3,[x0,#8*2]
+    stp d4,d5,[x0,#8*4]
+    stp d6,d7,[x0,#8*6]
+    stp d8,d9,[x0,#8*8]
+    stp d10,d11,[x0,#8*10]
+    stp d12,d13,[x0,#8*12]
+    stp d14,d15,[x0,#8*14]
+    stp d16,d17,[x0,#8*16]
+    stp d18,d19,[x0,#8*18]
+    stp d20,d21,[x0,#8*20]
+    stp d22,d23,[x0,#8*22]
+    str d24,[x0,#8*24]
+
+    ldp d8,d9,[sp,#16]
+    ldp d10,d11,[sp,#32]
+    ldp d12,d13,[sp,#48]
+    ldp d14,d15,[sp,#64]
+    ldr x29,[sp],#80
+    ret
+
+.ifndef old_gas_syntax
+.size   \name,.-\name
+.endif
+
+.endm
+
+////////////////////////////////////////////////////////////
+// main loop
+////////////////////////////////////////////////////////////
+
 .Loop_ce:
     ////////////////////////////////////////////////// Theta
     eor3    v25.16b,v20.16b,v15.16b,v10.16b
@@ -166,24 +296,30 @@ KeccakP1600_ARMv8Asha3_Permute_12rounds_internal:
     bne .Loop_ce
 
     ret
+
+////////////////////////////////////////////////////////////
+// permutation macro generator
+////////////////////////////////////////////////////////////
+
+.macro gen_KeccakP1600_ARMv8Asha3_Permute name, internal
+
+.globl  \name
+.globl  _\name
 .ifndef old_gas_syntax
-.size   KeccakP1600_ARMv8Asha3_Permute_12rounds_internal,.-KeccakP1600_ARMv8Asha3_Permute_12rounds_internal
+.type   \name,%function
 .endif
 
-.globl  KeccakP1600_ARMv8Asha3_Permute_12rounds
-.globl  _KeccakP1600_ARMv8Asha3_Permute_12rounds
-.ifndef old_gas_syntax
-.type   KeccakP1600_ARMv8Asha3_Permute_12rounds,%function
-.endif
-KeccakP1600_ARMv8Asha3_Permute_12rounds:
-_KeccakP1600_ARMv8Asha3_Permute_12rounds:
+\name:
+_\name:
 .balign 32
     stp x29,x30,[sp,#-80]!
     add x29,sp,#0
+
     stp d8,d9,[sp,#16]      // per ABI requirement
     stp d10,d11,[sp,#32]
     stp d12,d13,[sp,#48]
     stp d14,d15,[sp,#64]
+
     ldp d0,d1,[x0,#8*0]
     ldp d2,d3,[x0,#8*2]
     ldp d4,d5,[x0,#8*4]
@@ -197,8 +333,11 @@ _KeccakP1600_ARMv8Asha3_Permute_12rounds:
     ldp d20,d21,[x0,#8*20]
     ldp d22,d23,[x0,#8*22]
     ldr d24,[x0,#8*24]
-    bl  KeccakP1600_ARMv8Asha3_Permute_12rounds_internal
+
+    bl  \internal
+
     ldr x30,[sp,#8]
+
     stp d0,d1,[x0,#8*0]
     stp d2,d3,[x0,#8*2]
     stp d4,d5,[x0,#8*4]
@@ -220,74 +359,16 @@ _KeccakP1600_ARMv8Asha3_Permute_12rounds:
     ldr x29,[sp],#80
     ret
 .ifndef old_gas_syntax
-.size   KeccakP1600_ARMv8Asha3_Permute_12rounds,.-KeccakP1600_ARMv8Asha3_Permute_12rounds
+.size   \name,.-\name
 .endif
+.endm
 
-.ifndef old_gas_syntax
-.type   KeccakP1600_ARMv8Asha3_Permute24rounds_internal,%function
-.endif
-KeccakP1600_ARMv8Asha3_Permute_24rounds_internal:
-.balign 32
-    mov x9,#24
-    adr x10,iotas
-    b   .Loop_ce
-.balign 16
-.ifndef old_gas_syntax
-.size   KeccakP1600_ARMv8Asha3_Permute_24rounds_internal,.-KeccakP1600_ARMv8Asha3_Permute_24rounds_internal
-.endif
-
-.globl  KeccakP1600_ARMv8Asha3_Permute_24rounds
-.globl  _KeccakP1600_ARMv8Asha3_Permute_24rounds
-.ifndef old_gas_syntax
-.type   KeccakP1600_ARMv8Asha3_Permute_24rounds,%function
-.endif
-KeccakP1600_ARMv8Asha3_Permute_24rounds:
-_KeccakP1600_ARMv8Asha3_Permute_24rounds:
-.balign 32
-    stp x29,x30,[sp,#-80]!
-    add x29,sp,#0
-    stp d8,d9,[sp,#16]      // per ABI requirement
-    stp d10,d11,[sp,#32]
-    stp d12,d13,[sp,#48]
-    stp d14,d15,[sp,#64]
-    ldp d0,d1,[x0,#8*0]
-    ldp d2,d3,[x0,#8*2]
-    ldp d4,d5,[x0,#8*4]
-    ldp d6,d7,[x0,#8*6]
-    ldp d8,d9,[x0,#8*8]
-    ldp d10,d11,[x0,#8*10]
-    ldp d12,d13,[x0,#8*12]
-    ldp d14,d15,[x0,#8*14]
-    ldp d16,d17,[x0,#8*16]
-    ldp d18,d19,[x0,#8*18]
-    ldp d20,d21,[x0,#8*20]
-    ldp d22,d23,[x0,#8*22]
-    ldr d24,[x0,#8*24]
-    bl  KeccakP1600_ARMv8Asha3_Permute_24rounds_internal
-    ldr x30,[sp,#8]
-    stp d0,d1,[x0,#8*0]
-    stp d2,d3,[x0,#8*2]
-    stp d4,d5,[x0,#8*4]
-    stp d6,d7,[x0,#8*6]
-    stp d8,d9,[x0,#8*8]
-    stp d10,d11,[x0,#8*10]
-    stp d12,d13,[x0,#8*12]
-    stp d14,d15,[x0,#8*14]
-    stp d16,d17,[x0,#8*16]
-    stp d18,d19,[x0,#8*18]
-    stp d20,d21,[x0,#8*20]
-    stp d22,d23,[x0,#8*22]
-    str d24,[x0,#8*24]
-
-    ldp d8,d9,[sp,#16]
-    ldp d10,d11,[sp,#32]
-    ldp d12,d13,[sp,#48]
-    ldp d14,d15,[sp,#64]
-    ldr x29,[sp],#80
-    ret
-.ifndef old_gas_syntax
-.size   KeccakP1600_ARMv8Asha3_Permute_24rounds,.-KeccakP1600_ARMv8Asha3_Permute_24rounds
-.endif
+// macro instantiation
+gen_KeccakP1600_ARMv8Asha3_Permute KeccakP1600_ARMv8Asha3_Permute_4rounds,  KeccakP1600_ARMv8Asha3_Permute_4rounds_internal
+gen_KeccakP1600_ARMv8Asha3_Permute KeccakP1600_ARMv8Asha3_Permute_6rounds,  KeccakP1600_ARMv8Asha3_Permute_6rounds_internal
+gen_KeccakP1600_ARMv8Asha3_Permute KeccakP1600_ARMv8Asha3_Permute_12rounds, KeccakP1600_ARMv8Asha3_Permute_12rounds_internal
+gen_KeccakP1600_ARMv8Asha3_Permute KeccakP1600_ARMv8Asha3_Permute_24rounds, KeccakP1600_ARMv8Asha3_Permute_24rounds_internal
+gen_KeccakP1600_ARMv8Asha3_Permute KeccakP1600_ARMv8Asha3_Permute_Nrounds, KeccakP1600_ARMv8Asha3_Permute_Nrounds_internal
 
 // size_t KeccakP1600_ARMv8Asha3_12rounds_FastLoop_Absorb(
 //      void *state(x0),
@@ -497,6 +578,7 @@ _KeccakP1600times2_ARMv8Asha3_Permute_12rounds:
 .ifndef old_gas_syntax
 .size   KeccakP1600times2_ARMv8Asha3_Permute_12rounds,.-KeccakP1600times2_ARMv8Asha3_Permute_12rounds
 .endif
+
 
 .globl  KT128_ARMv8Asha3_Process2Leaves
 .globl  _KT128_ARMv8Asha3_Process2Leaves
@@ -914,4 +996,3 @@ _KT256_ARMv8Asha3_Process2Leaves:
 .ifndef old_gas_syntax
 .size   KT256_ARMv8Asha3_Process2Leaves,.-KT256_ARMv8Asha3_Process2Leaves
 .endif
-

@@ -21,23 +21,18 @@ Please refer to the XKCP for more details.
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <KeccakP-1600-SnP.h>
-
-// const char * KeccakP1600_GetImplementation()
-// {
-//     return "ARMv8-A+SHA3 optimized implementation";
-// }
+#include "KeccakP-1600-SnP.h"
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_Initialize(void *state)
+void KeccakP1600_opt64_Initialize(KeccakP1600_ARMv8Asha3 *state)
 {
     memset(state, 0, 200);
 }
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_AddBytesInLane(void *state, unsigned int lanePosition, const unsigned char *data, unsigned int offset, unsigned int length)
+void KeccakP1600_opt64_AddBytesInLane(KeccakP1600_ARMv8Asha3 *state, unsigned int lanePosition, const unsigned char *data, unsigned int offset, unsigned int length)
 {
     uint64_t lane;
 
@@ -55,7 +50,7 @@ void KeccakP1600_opt64_AddBytesInLane(void *state, unsigned int lanePosition, co
 
 /* ---------------------------------------------------------------- */
 
-static void KeccakP1600_opt64_AddLanes(void *state, const unsigned char *data, unsigned int laneCount)
+static void KeccakP1600_opt64_AddLanes(KeccakP1600_ARMv8Asha3 *state, const unsigned char *data, unsigned int laneCount)
 {
     unsigned int i = 0;
 
@@ -86,7 +81,7 @@ static void KeccakP1600_opt64_AddLanes(void *state, const unsigned char *data, u
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_AddByte(void *state, unsigned char byte, unsigned int offset)
+void KeccakP1600_opt64_AddByte(KeccakP1600_ARMv8Asha3 *state, unsigned char byte, unsigned int offset)
 {
     ((unsigned char*)(state))[offset] ^= byte;
 }
@@ -121,26 +116,27 @@ void KeccakP1600_opt64_AddByte(void *state, unsigned char byte, unsigned int off
         } \
     }
 
-void KeccakP1600_opt64_AddBytes(void *state, const unsigned char *data, unsigned int offset, unsigned int length)
+void KeccakP1600_opt64_AddBytes(KeccakP1600_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length)
 {
     SnP_AddBytes(state, data, offset, length, KeccakP1600_opt64_AddLanes, KeccakP1600_opt64_AddBytesInLane, 8);
 }
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_ExtractBytesInLane(const void *state, unsigned int lanePosition, unsigned char *data, unsigned int offset, unsigned int length)
+void KeccakP1600_opt64_ExtractBytesInLane(const KeccakP1600_ARMv8Asha3 *state, unsigned int lanePosition, unsigned char *data, unsigned int offset, unsigned int length)
 {
-    uint64_t lane = ((uint64_t*)state)[lanePosition];
-    {
-        uint64_t lane1[1];
-        lane1[0] = lane;
-        memcpy(data, (uint8_t*)lane1+offset, length);
-    }
+    uint64_t lane;
+
+        if (length == 0)
+            return;
+
+        lane = state->A[lanePosition];
+        memcpy(data, ((unsigned char *)&lane) + offset, length);
 }
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_ExtractLanes(const void *state, unsigned char *data, unsigned int laneCount)
+void KeccakP1600_opt64_ExtractLanes(const KeccakP1600_ARMv8Asha3 *state, unsigned char *data, unsigned int laneCount)
 {
     memcpy(data, state, laneCount*8);
 }
@@ -174,62 +170,46 @@ void KeccakP1600_opt64_ExtractLanes(const void *state, unsigned char *data, unsi
             } \
         } \
     }
+    
+/* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_ExtractBytes(const void *state, unsigned char *data, unsigned int offset, unsigned int length)
+void KeccakP1600_opt64_ExtractBytes(const KeccakP1600_ARMv8Asha3 *state, unsigned char *data, unsigned int offset, unsigned int length)
 {
     SnP_ExtractBytes(state, data, offset, length, KeccakP1600_opt64_ExtractLanes, KeccakP1600_opt64_ExtractBytesInLane, 8);
 }
 
 /* ---------------------------------------------------------------- */
 
-// /* Keccak-p[1600]×2 */
+void KeccakP1600_opt64_OverwriteBytes(KeccakP1600_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length){
+    unsigned int i;
+    for (i = 0; i < length; i++) {
+        ((unsigned char*)(state))[offset + i] = data[i];
+    }
+}
 
-// int KeccakP1600times2_IsAvailable()
-// {
-//     return 1;
-// }
+/* ---------------------------------------------------------------- */
 
-// const char * KeccakP1600times2_GetImplementation()
-// {
-//     return "ARMv8-A+SHA3 optimized implementation";
-// }
+void KeccakP1600_opt64_OverwriteWithZeroes(KeccakP1600_ARMv8Asha3 *state, unsigned int byteCount){
+    unsigned int i;
+    for (i = 0; i < byteCount; i++) {
+        ((unsigned char*)(state))[i] = 0;
+    }
+}
 
-// /* Keccak-p[1600]×4 */
+/* ---------------------------------------------------------------- */
 
-// int KeccakP1600times4_IsAvailable()
-// {
-//     return 0;
-// }
+//taken from readable KECCAK
+static uint64_t load64(const unsigned char *data){
+    uint64_t x;
+    memcpy(&x, data, sizeof(x));
+    return x;
+}
 
-// const char * KeccakP1600times4_GetImplementation()
-// {
-//     return "";
-// }
+/* ---------------------------------------------------------------- */
 
-// void KT128_Process4Leaves(const unsigned char *input, unsigned char *output)
-// {
-// }
-
-// void KT256_Process4Leaves(const unsigned char *input, unsigned char *output)
-// {
-// }
-
-// /* Keccak-p[1600]×8 */
-
-// int KeccakP1600times8_IsAvailable()
-// {
-//     return 0;
-// }
-
-// const char * KeccakP1600times8_GetImplementation()
-// {
-//     return "";
-// }
-
-// void KT128_Process8Leaves(const unsigned char *input, unsigned char *output)
-// {
-// }
-
-// void KT256_Process8Leaves(const unsigned char *input, unsigned char *output)
-// {
-// }
+void KeccakP1600_opt64_ExtractAndAddBytes(const KeccakP1600_ARMv8Asha3 *state, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length){
+    const unsigned char *stateBytes = (const unsigned char *)state;
+    unsigned int i;
+    for (i = 0; i < length; ++i)
+        output[i] = input[i] ^ stateBytes[offset + i];
+}

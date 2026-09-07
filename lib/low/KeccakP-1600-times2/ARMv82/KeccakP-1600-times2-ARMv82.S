@@ -63,16 +63,66 @@ iotas4:
 .ifndef old_gas_syntax
 .size   iotas,.-iotas
 .endif
+
+////////////////////////////////////////////////////////////
+// permutation entry points
+// variables:
+//   x9  = number of rounds (4,6,12,24)
+//   x10 = iotas (4,6,12,24)
+////////////////////////////////////////////////////////////
+
+.ifndef old_gas_syntax
+.type KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal,%function
+.endif
+KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal:
+.balign 32
+    mov x9,#4
+    adr x10,iotas4
+    b .Loop_ce
+.ifndef old_gas_syntax
+.size KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal
+.endif
+
+.ifndef old_gas_syntax
+.type KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal,%function
+.endif
+KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal:
+.balign 32
+    mov x9,#6
+    adr x10,iotas6
+    b .Loop_ce
+.ifndef old_gas_syntax
+.size KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal
+.endif
  
 .ifndef old_gas_syntax
-.type   KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal,%function
+.type KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal,%function
 .endif
 KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal:
 .balign 32
     mov x9,#12
     adr x10,iotas12
-    b   .Loop_ce
-.balign 16
+    b .Loop_ce
+.ifndef old_gas_syntax
+.size KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal
+.endif
+
+.ifndef old_gas_syntax
+.type KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal,%function
+.endif
+KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal:
+.balign 32
+    mov x9,#24
+    adr x10,iotas
+    b .Loop_ce
+.ifndef old_gas_syntax
+.size KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal
+.endif
+
+////////////////////////////////////////////////////////////
+// main loop 
+////////////////////////////////////////////////////////////
+
 .Loop_ce:
     ////////////////////////////////////////////////// Theta
     eor3    v25.16b,v20.16b,v15.16b,v10.16b
@@ -166,52 +216,51 @@ KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal:
     bne .Loop_ce
 
     ret
+
+////////////////////////////////////////////////////////////
+// permutation macro 
+////////////////////////////////////////////////////////////
+
+.macro gen_KeccakP1600times2_ARMv8Asha3_Permute name, internal
+
+.globl  \name
+.globl  _\name
 .ifndef old_gas_syntax
-.size   KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal
+.type   \name,%function
 .endif
 
-.globl  KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds
-.globl  _KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds
-.ifndef old_gas_syntax
-.type   KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds,%function
-.endif
-KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds:
-_KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds:
+\name:
+_\name:
 .balign 32
     stp x29,x30,[sp,#-80]!
-    add x29,sp,#0
-    stp d8,d9,[sp,#16]      // per ABI requirement
+    mov x29,sp
+
+    stp d8,d9,[sp,#16]
     stp d10,d11,[sp,#32]
     stp d12,d13,[sp,#48]
     stp d14,d15,[sp,#64]
-    ldp d0,d1,[x0,#8*0]
-    ldp d2,d3,[x0,#8*2]
-    ldp d4,d5,[x0,#8*4]
-    ldp d6,d7,[x0,#8*6]
-    ldp d8,d9,[x0,#8*8]
-    ldp d10,d11,[x0,#8*10]
-    ldp d12,d13,[x0,#8*12]
-    ldp d14,d15,[x0,#8*14]
-    ldp d16,d17,[x0,#8*16]
-    ldp d18,d19,[x0,#8*18]
-    ldp d20,d21,[x0,#8*20]
-    ldp d22,d23,[x0,#8*22]
-    ldr d24,[x0,#8*24]
-    bl  KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal
+
+    ld1 {v0.2d,v1.2d,v2.2d,v3.2d},[x0],#64
+    ld1 {v4.2d,v5.2d,v6.2d,v7.2d},[x0],#64
+    ld1 {v8.2d,v9.2d,v10.2d,v11.2d},[x0],#64
+    ld1 {v12.2d,v13.2d,v14.2d,v15.2d},[x0],#64
+    ld1 {v16.2d,v17.2d,v18.2d,v19.2d},[x0],#64
+    ld1 {v20.2d,v21.2d,v22.2d,v23.2d},[x0],#64
+    ld1 {v24.2d},[x0]
+
+    sub x0,x0,#384
+
+    bl \internal
+
     ldr x30,[sp,#8]
-    stp d0,d1,[x0,#8*0]
-    stp d2,d3,[x0,#8*2]
-    stp d4,d5,[x0,#8*4]
-    stp d6,d7,[x0,#8*6]
-    stp d8,d9,[x0,#8*8]
-    stp d10,d11,[x0,#8*10]
-    stp d12,d13,[x0,#8*12]
-    stp d14,d15,[x0,#8*14]
-    stp d16,d17,[x0,#8*16]
-    stp d18,d19,[x0,#8*18]
-    stp d20,d21,[x0,#8*20]
-    stp d22,d23,[x0,#8*22]
-    str d24,[x0,#8*24]
+    
+    st1 {v0.2d,v1.2d,v2.2d,v3.2d},[x0],#64
+    st1 {v4.2d,v5.2d,v6.2d,v7.2d},[x0],#64
+    st1 {v8.2d,v9.2d,v10.2d,v11.2d},[x0],#64
+    st1 {v12.2d,v13.2d,v14.2d,v15.2d},[x0],#64
+    st1 {v16.2d,v17.2d,v18.2d,v19.2d},[x0],#64
+    st1 {v20.2d,v21.2d,v22.2d,v23.2d},[x0],#64
+    st1 {v24.2d},[x0]
 
     ldp d8,d9,[sp,#16]
     ldp d10,d11,[sp,#32]
@@ -220,74 +269,15 @@ _KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds:
     ldr x29,[sp],#80
     ret
 .ifndef old_gas_syntax
-.size   KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds
+.size   \name,.-\name
 .endif
+.endm
 
-.ifndef old_gas_syntax
-.type   KeccakP1600times2_ARMv8Asha3_Permute24rounds_internal,%function
-.endif
-KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal:
-.balign 32
-    mov x9,#24
-    adr x10,iotas
-    b   .Loop_ce
-.balign 16
-.ifndef old_gas_syntax
-.size   KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal
-.endif
-
-.globl  KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds
-.globl  _KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds
-.ifndef old_gas_syntax
-.type   KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds,%function
-.endif
-KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds:
-_KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds:
-.balign 32
-    stp x29,x30,[sp,#-80]!
-    add x29,sp,#0
-    stp d8,d9,[sp,#16]      // per ABI requirement
-    stp d10,d11,[sp,#32]
-    stp d12,d13,[sp,#48]
-    stp d14,d15,[sp,#64]
-    ldp d0,d1,[x0,#8*0]
-    ldp d2,d3,[x0,#8*2]
-    ldp d4,d5,[x0,#8*4]
-    ldp d6,d7,[x0,#8*6]
-    ldp d8,d9,[x0,#8*8]
-    ldp d10,d11,[x0,#8*10]
-    ldp d12,d13,[x0,#8*12]
-    ldp d14,d15,[x0,#8*14]
-    ldp d16,d17,[x0,#8*16]
-    ldp d18,d19,[x0,#8*18]
-    ldp d20,d21,[x0,#8*20]
-    ldp d22,d23,[x0,#8*22]
-    ldr d24,[x0,#8*24]
-    bl  KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal
-    ldr x30,[sp,#8]
-    stp d0,d1,[x0,#8*0]
-    stp d2,d3,[x0,#8*2]
-    stp d4,d5,[x0,#8*4]
-    stp d6,d7,[x0,#8*6]
-    stp d8,d9,[x0,#8*8]
-    stp d10,d11,[x0,#8*10]
-    stp d12,d13,[x0,#8*12]
-    stp d14,d15,[x0,#8*14]
-    stp d16,d17,[x0,#8*16]
-    stp d18,d19,[x0,#8*18]
-    stp d20,d21,[x0,#8*20]
-    stp d22,d23,[x0,#8*22]
-    str d24,[x0,#8*24]
-
-    ldp d8,d9,[sp,#16]
-    ldp d10,d11,[sp,#32]
-    ldp d12,d13,[sp,#48]
-    ldp d14,d15,[sp,#64]
-    ldr x29,[sp],#80
-    ret
-.ifndef old_gas_syntax
-.size   KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds
-.endif
+// macro instantiation
+gen_KeccakP1600times2_ARMv8Asha3_Permute KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds,  KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal
+gen_KeccakP1600times2_ARMv8Asha3_Permute KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds,  KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal
+gen_KeccakP1600times2_ARMv8Asha3_Permute KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds, KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal
+gen_KeccakP1600times2_ARMv8Asha3_Permute KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds, KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal
 
 // size_t KeccakP1600times2_ARMv8Asha3_12rounds_FastLoop_Absorb(
 //      void *state(x0),
@@ -452,539 +442,6 @@ _KeccakP1600times2_ARMv8Asha3_12rounds_FastLoop_Absorb:
 .size   KeccakP1600times2_ARMv8Asha3_12rounds_FastLoop_Absorb,.-KeccakP1600times2_ARMv8Asha3_12rounds_FastLoop_Absorb
 .endif
 
-.globl  KT128_ARMv8Asha3_Process2Leaves
-.globl  _KT128_ARMv8Asha3_Process2Leaves
-.ifndef old_gas_syntax
-.type   KT128_ARMv8Asha3_Process2Leaves,%function
-.endif
-KT128_ARMv8Asha3_Process2Leaves:
-_KT128_ARMv8Asha3_Process2Leaves:
-.balign 32
-    stp x29,x30,[sp,#-80]!
-    add x29,sp,#0
-    stp d8,d9,[sp,#16]      // per ABI requirement
-    stp d10,d11,[sp,#32]
-    stp d12,d13,[sp,#48]
-    stp d14,d15,[sp,#64]
-
-    movi  v0.2d, #0
-    movi  v1.2d, #0
-    movi  v2.2d, #0
-    movi  v3.2d, #0
-    movi  v4.2d, #0
-    movi  v5.2d, #0
-    movi  v6.2d, #0
-    movi  v7.2d, #0
-    movi  v8.2d, #0
-    movi  v9.2d, #0
-    movi v10.2d, #0
-    movi v11.2d, #0
-    movi v12.2d, #0
-    movi v13.2d, #0
-    movi v14.2d, #0
-    movi v15.2d, #0
-    movi v16.2d, #0
-    movi v17.2d, #0
-    movi v18.2d, #0
-    movi v19.2d, #0
-    movi v20.2d, #0
-    movi v21.2d, #0
-    movi v22.2d, #0
-    movi v23.2d, #0
-    movi v24.2d, #0
-
-    // x12 is input + chunkSize
-    add x12, x0, #8192
-
-    // Loop over the first 48 blocks
-    mov x11, 48
-    b .KT128_ARMv8Asha3_Process2Leaves_blocks
-.KT128_ARMv8Asha3_Process2Leaves_blocks:
-
-    // Lanes 0-3
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v0.16b, v0.16b, v25.16b
-    eor v1.16b, v1.16b, v26.16b
-    eor v2.16b, v2.16b, v27.16b
-    eor v3.16b, v3.16b, v28.16b
-
-    // Lanes 4-7
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v4.16b, v4.16b, v25.16b
-    eor v5.16b, v5.16b, v26.16b
-    eor v6.16b, v6.16b, v27.16b
-    eor v7.16b, v7.16b, v28.16b
-
-    // Lanes 8-11
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor  v8.16b,  v8.16b, v25.16b
-    eor  v9.16b,  v9.16b, v26.16b
-    eor v10.16b, v10.16b, v27.16b
-    eor v11.16b, v11.16b, v28.16b
-
-    // Lanes 12-15
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v12.16b, v12.16b, v25.16b
-    eor v13.16b, v13.16b, v26.16b
-    eor v14.16b, v14.16b, v27.16b
-    eor v15.16b, v15.16b, v28.16b
-
-    // Lanes 16-20
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-    ld1 {v29.d}[0], [x0], #8
-    ld1 {v29.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-    rev64 v29.16b, v29.16b
-#endif
-    eor v16.16b, v16.16b, v25.16b
-    eor v17.16b, v17.16b, v26.16b
-    eor v18.16b, v18.16b, v27.16b
-    eor v19.16b, v19.16b, v28.16b
-    eor v20.16b, v20.16b, v29.16b
-
-    bl KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal
-
-    subs x11, x11, #1
-    bne .KT128_ARMv8Asha3_Process2Leaves_blocks
-
-    // Lanes 0-3
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v0.16b, v0.16b, v25.16b
-    eor v1.16b, v1.16b, v26.16b
-    eor v2.16b, v2.16b, v27.16b
-    eor v3.16b, v3.16b, v28.16b
-
-    // Lanes 4-7
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v4.16b, v4.16b, v25.16b
-    eor v5.16b, v5.16b, v26.16b
-    eor v6.16b, v6.16b, v27.16b
-    eor v7.16b, v7.16b, v28.16b
-
-    // Lanes 8-11
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor  v8.16b,  v8.16b, v25.16b
-    eor  v9.16b,  v9.16b, v26.16b
-    eor v10.16b, v10.16b, v27.16b
-    eor v11.16b, v11.16b, v28.16b
-
-    // Lanes 12-15
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v12.16b, v12.16b, v25.16b
-    eor v13.16b, v13.16b, v26.16b
-    eor v14.16b, v14.16b, v27.16b
-    eor v15.16b, v15.16b, v28.16b
-
-    mov x13, #0x0B
-    dup v25.2d, x13
-    mov x13, #0x8000000000000000
-    dup v26.2d, x13
-    eor v16.16b, v16.16b, v25.16b
-    eor v20.16b, v20.16b, v26.16b
-
-    bl KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal
-
-    st1 {v0.1d-v3.1d}, [x1], #32
-    st1 {v0.d}[1], [x1], #8
-    st1 {v1.d}[1], [x1], #8
-    st1 {v2.d}[1], [x1], #8
-    st1 {v3.d}[1], [x1], #8
-
-    ldr x30,[sp,#8]
-    ldp d8,d9,[sp,#16]
-    ldp d10,d11,[sp,#32]
-    ldp d12,d13,[sp,#48]
-    ldp d14,d15,[sp,#64]
-    ldr x29,[sp],#80
-
-    ret
-.ifndef old_gas_syntax
-.size   KT128_ARMv8Asha3_Process2Leaves,.-KT128_ARMv8Asha3_Process2Leaves
-.endif
-
-.globl  KT256_ARMv8Asha3_Process2Leaves
-.globl  _KT256_ARMv8Asha3_Process2Leaves
-.ifndef old_gas_syntax
-.type   KT256_ARMv8Asha3_Process2Leaves,%function
-.endif
-KT256_ARMv8Asha3_Process2Leaves:
-_KT256_ARMv8Asha3_Process2Leaves:
-.balign 32
-    stp x29,x30,[sp,#-80]!
-    add x29,sp,#0
-    stp d8,d9,[sp,#16]      // per ABI requirement
-    stp d10,d11,[sp,#32]
-    stp d12,d13,[sp,#48]
-    stp d14,d15,[sp,#64]
-
-    movi  v0.2d, #0
-    movi  v1.2d, #0
-    movi  v2.2d, #0
-    movi  v3.2d, #0
-    movi  v4.2d, #0
-    movi  v5.2d, #0
-    movi  v6.2d, #0
-    movi  v7.2d, #0
-    movi  v8.2d, #0
-    movi  v9.2d, #0
-    movi v10.2d, #0
-    movi v11.2d, #0
-    movi v12.2d, #0
-    movi v13.2d, #0
-    movi v14.2d, #0
-    movi v15.2d, #0
-    movi v16.2d, #0
-    movi v17.2d, #0
-    movi v18.2d, #0
-    movi v19.2d, #0
-    movi v20.2d, #0
-    movi v21.2d, #0
-    movi v22.2d, #0
-    movi v23.2d, #0
-    movi v24.2d, #0
-
-    // x12 is input + chunkSize
-    add x12, x0, #8192
-
-    // Loop over the first 60 blocks
-    mov x11, 60
-    b .KT256_ARMv8Asha3_Process2Leaves_blocks
-.KT256_ARMv8Asha3_Process2Leaves_blocks:
-
-    // Lanes 0-3
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v0.16b, v0.16b, v25.16b
-    eor v1.16b, v1.16b, v26.16b
-    eor v2.16b, v2.16b, v27.16b
-    eor v3.16b, v3.16b, v28.16b
-
-    // Lanes 4-7
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v4.16b, v4.16b, v25.16b
-    eor v5.16b, v5.16b, v26.16b
-    eor v6.16b, v6.16b, v27.16b
-    eor v7.16b, v7.16b, v28.16b
-
-    // Lanes 8-11
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor  v8.16b,  v8.16b, v25.16b
-    eor  v9.16b,  v9.16b, v26.16b
-    eor v10.16b, v10.16b, v27.16b
-    eor v11.16b, v11.16b, v28.16b
-
-    // Lanes 12-15
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v12.16b, v12.16b, v25.16b
-    eor v13.16b, v13.16b, v26.16b
-    eor v14.16b, v14.16b, v27.16b
-    eor v15.16b, v15.16b, v28.16b
-
-    // Lane 16
-    ld1 {v25.d}[0], [x0], #8
-    ld1 {v25.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-#endif
-    eor v16.16b, v16.16b, v25.16b
-
-    bl KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal
-
-    subs x11, x11, #1
-    bne .KT256_ARMv8Asha3_Process2Leaves_blocks
-
-    // Lanes 0-3
-    ld1 {v25.1d-v28.1d}, [x0], #32
-    ld1 {v25.d}[1], [x12], #8
-    ld1 {v26.d}[1], [x12], #8
-    ld1 {v27.d}[1], [x12], #8
-    ld1 {v28.d}[1], [x12], #8
-#ifdef  __AARCH64EB__
-    rev64 v25.16b, v25.16b
-    rev64 v26.16b, v26.16b
-    rev64 v27.16b, v27.16b
-    rev64 v28.16b, v28.16b
-#endif
-    eor v0.16b, v0.16b, v25.16b
-    eor v1.16b, v1.16b, v26.16b
-    eor v2.16b, v2.16b, v27.16b
-    eor v3.16b, v3.16b, v28.16b
-
-    mov x13, #0x0B
-    dup v25.2d, x13
-    mov x13, #0x8000000000000000
-    dup v26.2d, x13
-    eor  v4.16b,  v4.16b, v25.16b
-    eor v16.16b, v16.16b, v26.16b
-
-    bl KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds_internal
-
-    st1 {v0.1d-v3.1d}, [x1], #32
-    st1 {v4.1d-v7.1d}, [x1], #32
-    st1 {v0.d}[1], [x1], #8
-    st1 {v1.d}[1], [x1], #8
-    st1 {v2.d}[1], [x1], #8
-    st1 {v3.d}[1], [x1], #8
-    st1 {v4.d}[1], [x1], #8
-    st1 {v5.d}[1], [x1], #8
-    st1 {v6.d}[1], [x1], #8
-    st1 {v7.d}[1], [x1], #8
-
-    ldr x30,[sp,#8]
-    ldp d8,d9,[sp,#16]
-    ldp d10,d11,[sp,#32]
-    ldp d12,d13,[sp,#48]
-    ldp d14,d15,[sp,#64]
-    ldr x29,[sp],#80
-
-    ret
-.ifndef old_gas_syntax
-.size   KT256_ARMv8Asha3_Process2Leaves,.-KT256_ARMv8Asha3_Process2Leaves
-.endif
-
-.ifndef old_gas_syntax
-.type   KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal,%function
-.endif
-KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal:
-.balign 32
-    mov x9,#4
-    adr x10,iotas4
-    b   .Loop_ce
-.balign 16
-.ifndef old_gas_syntax
-.size   KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal
-.endif
-
-.globl  KeccakP1600times2_PermuteAll_4rounds
-.globl  _KeccakP1600times2_PermuteAll_4rounds
-.ifndef old_gas_syntax
-.type   KeccakP1600times2_PermuteAll_4rounds,%function
-.endif
-KeccakP1600times2_PermuteAll_4rounds:
-_KeccakP1600times2_PermuteAll_4rounds:
-.balign 32
-    stp x29,x30,[sp,#-80]!
-    add x29,sp,#0
-    stp d8,d9,[sp,#16]      // per ABI requirement
-    stp d10,d11,[sp,#32]
-    stp d12,d13,[sp,#48]
-    stp d14,d15,[sp,#64]
-
-    ld1 { v0.2d,  v1.2d,  v2.2d,  v3.2d}, [x0], #64
-    ld1 { v4.2d,  v5.2d,  v6.2d,  v7.2d}, [x0], #64
-    ld1 { v8.2d,  v9.2d, v10.2d, v11.2d}, [x0], #64
-    ld1 {v12.2d, v13.2d, v14.2d, v15.2d}, [x0], #64
-    ld1 {v16.2d, v17.2d, v18.2d, v19.2d}, [x0], #64
-    ld1 {v20.2d, v21.2d, v22.2d, v23.2d}, [x0], #64
-    ld1 {v24.2d}, [x0]
-    sub x0, x0, #64*6
-
-    bl  KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds_internal
-
-    ldr x30,[sp,#8]
-    st1 { v0.2d,  v1.2d,  v2.2d,  v3.2d}, [x0], #64
-    st1 { v4.2d,  v5.2d,  v6.2d,  v7.2d}, [x0], #64
-    st1 { v8.2d,  v9.2d, v10.2d, v11.2d}, [x0], #64
-    st1 {v12.2d, v13.2d, v14.2d, v15.2d}, [x0], #64
-    st1 {v16.2d, v17.2d, v18.2d, v19.2d}, [x0], #64
-    st1 {v20.2d, v21.2d, v22.2d, v23.2d}, [x0], #64
-    st1 {v24.2d}, [x0]
-
-    ldp d8,d9,[sp,#16]
-    ldp d10,d11,[sp,#32]
-    ldp d12,d13,[sp,#48]
-    ldp d14,d15,[sp,#64]
-    ldr x29,[sp],#80
-    ret
-.ifndef old_gas_syntax
-.size   KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds
-.endif
-
-.ifndef old_gas_syntax
-.type   KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal,%function
-.endif
-KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal:
-.balign 32
-    mov x9,#6
-    adr x10,iotas6
-    b   .Loop_ce
-.balign 16
-.ifndef old_gas_syntax
-.size   KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal,.-KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal
-.endif
-
-.globl  KeccakP1600times2_PermuteAll_6rounds
-.globl  _KeccakP1600times2_PermuteAll_6rounds
-.ifndef old_gas_syntax
-.type   KeccakP1600times2_PermuteAll_6rounds,%function
-.endif
-KeccakP1600times2_PermuteAll_6rounds:
-_KeccakP1600times2_PermuteAll_6rounds:
-.balign 32
-    stp x29,x30,[sp,#-80]!
-    add x29,sp,#0
-    stp d8,d9,[sp,#16]      // per ABI requirement
-    stp d10,d11,[sp,#32]
-    stp d12,d13,[sp,#48]
-    stp d14,d15,[sp,#64]
-
-    ld1 { v0.2d,  v1.2d,  v2.2d,  v3.2d}, [x0], #64
-    ld1 { v4.2d,  v5.2d,  v6.2d,  v7.2d}, [x0], #64
-    ld1 { v8.2d,  v9.2d, v10.2d, v11.2d}, [x0], #64
-    ld1 {v12.2d, v13.2d, v14.2d, v15.2d}, [x0], #64
-    ld1 {v16.2d, v17.2d, v18.2d, v19.2d}, [x0], #64
-    ld1 {v20.2d, v21.2d, v22.2d, v23.2d}, [x0], #64
-    ld1 {v24.2d}, [x0]
-    sub x0, x0, #64*6
-
-    bl  KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds_internal
-
-    ldr x30,[sp,#8]
-    st1 { v0.2d,  v1.2d,  v2.2d,  v3.2d}, [x0], #64
-    st1 { v4.2d,  v5.2d,  v6.2d,  v7.2d}, [x0], #64
-    st1 { v8.2d,  v9.2d, v10.2d, v11.2d}, [x0], #64
-    st1 {v12.2d, v13.2d, v14.2d, v15.2d}, [x0], #64
-    st1 {v16.2d, v17.2d, v18.2d, v19.2d}, [x0], #64
-    st1 {v20.2d, v21.2d, v22.2d, v23.2d}, [x0], #64
-    st1 {v24.2d}, [x0]
-
-    ldp d8,d9,[sp,#16]
-    ldp d10,d11,[sp,#32]
-    ldp d12,d13,[sp,#48]
-    ldp d14,d15,[sp,#64]
-    ldr x29,[sp],#80
-    ret
-.ifndef old_gas_syntax
-.size   KeccakP1600times2_PermuteAll_6rounds,.-KeccakP1600times2_PermuteAll_6rounds
-.endif
-
 .ifndef old_gas_syntax
 .type   KeccakP1600times2_PermuteAll_24rounds_internal,%function
 .endif
@@ -996,49 +453,4 @@ KeccakP1600times2_PermuteAll_24rounds_internal:
 .balign 16
 .ifndef old_gas_syntax
 .size   KeccakP1600times2_PermuteAll_24rounds_internal,.-KeccakP1600times2_PermuteAll_24rounds_internal
-.endif
-
-.globl  KeccakP1600times2_PermuteAll_24rounds
-.globl  _KeccakP1600times2_PermuteAll_24rounds
-.ifndef old_gas_syntax
-.type   KeccakP1600times2_PermuteAll_24rounds,%function
-.endif
-KeccakP1600times2_PermuteAll_24rounds:
-_KeccakP1600times2_PermuteAll_24rounds:
-.balign 32
-    stp x29,x30,[sp,#-80]!
-    add x29,sp,#0
-    stp d8,d9,[sp,#16]      // per ABI requirement
-    stp d10,d11,[sp,#32]
-    stp d12,d13,[sp,#48]
-    stp d14,d15,[sp,#64]
-
-    ld1 { v0.2d,  v1.2d,  v2.2d,  v3.2d}, [x0], #64
-    ld1 { v4.2d,  v5.2d,  v6.2d,  v7.2d}, [x0], #64
-    ld1 { v8.2d,  v9.2d, v10.2d, v11.2d}, [x0], #64
-    ld1 {v12.2d, v13.2d, v14.2d, v15.2d}, [x0], #64
-    ld1 {v16.2d, v17.2d, v18.2d, v19.2d}, [x0], #64
-    ld1 {v20.2d, v21.2d, v22.2d, v23.2d}, [x0], #64
-    ld1 {v24.2d}, [x0]
-    sub x0, x0, #64*6
-
-    bl  KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds_internal
-
-    ldr x30,[sp,#8]
-    st1 { v0.2d,  v1.2d,  v2.2d,  v3.2d}, [x0], #64
-    st1 { v4.2d,  v5.2d,  v6.2d,  v7.2d}, [x0], #64
-    st1 { v8.2d,  v9.2d, v10.2d, v11.2d}, [x0], #64
-    st1 {v12.2d, v13.2d, v14.2d, v15.2d}, [x0], #64
-    st1 {v16.2d, v17.2d, v18.2d, v19.2d}, [x0], #64
-    st1 {v20.2d, v21.2d, v22.2d, v23.2d}, [x0], #64
-    st1 {v24.2d}, [x0]
-
-    ldp d8,d9,[sp,#16]
-    ldp d10,d11,[sp,#32]
-    ldp d12,d13,[sp,#48]
-    ldp d14,d15,[sp,#64]
-    ldr x29,[sp],#80
-    ret
-.ifndef old_gas_syntax
-.size   KeccakP1600times2_PermuteAll_24rounds,.-KeccakP1600times2_PermuteAll_24rounds
 .endif

@@ -179,180 +179,156 @@ void SetArmProcessorCapabilities() {
     enum arm_cpu_feature features = get_arm_cpu_features();
     enableNEON = (features & ARM_NEON) != 0;
     enableARM_SHA3 = (features & ARM_SHA3) != 0;
+}
 
 #ifdef KeccakP1600_enable_simd_options
     enableNEON = enableNEON && !NEON_requested_disabled;
     enableARM_SHA3 = enableARM_SHA3 && !ARM_SHA3_requested_disabled;
 #endif  // KeccakP1600_enable_simd_options
-}
 
 /* ---------------------------------------------------------------- */
 /* External function declarations */
 /* ---------------------------------------------------------------- */
+// Generic ARM64 implementations from KeccakP-1600-times2-opt64.c 
+extern void KeccakP1600times2_opt64_InitializeAll(KeccakP1600times2_ARMv8Asha3 *states);
+extern void KeccakP1600times2_opt64_AddByte(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned char data, unsigned int offset);
+extern void KeccakP1600times2_opt64_AddBytes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length);
+extern void KeccakP1600times2_opt64_AddLanesAll(KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *data, unsigned int laneCount, unsigned int laneOffset);
+extern void KeccakP1600times2_opt64_OverwriteBytes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length);
+extern void KeccakP1600times2_opt64_OverwriteLanesAll(KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *data, unsigned int laneCount, unsigned int laneOffset);
+extern void KeccakP1600times2_opt64_OverwriteWithZeroes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned int byteCount);
+extern void KeccakP1600times2_opt64_ExtractBytes(const KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned char *data, unsigned int offset, unsigned int length);
+extern void KeccakP1600times2_opt64_ExtractLanesAll(const KeccakP1600times2_ARMv8Asha3 *states, unsigned char *data, unsigned int laneCount, unsigned int laneOffset);
+extern void KeccakP1600times2_opt64_ExtractAndAddBytes(const KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length);
+extern void KeccakP1600times2_opt64_ExtractAndAddLanesAll(const KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *input, unsigned char *output, unsigned int laneCount, unsigned int laneOffset);
 
-// Generic ARM64 implementations (from KeccakP-1600-opt64.c)
-extern void KeccakP1600_opt64_Initialize(void *state);
-extern void KeccakP1600_opt64_AddByte(void *state, unsigned char data, unsigned int offset);
-extern void KeccakP1600_opt64_AddBytes(void *state, const unsigned char *data, unsigned int offset, unsigned int length);
-extern void KeccakP1600_opt64_Permute_12rounds(void *state);
-extern void KeccakP1600_opt64_Permute_24rounds(void *state);
-extern void KeccakP1600_opt64_ExtractBytes(const void *state, unsigned char *data, unsigned int offset, unsigned int length);
-// extern size_t KeccakP1600_opt64_12rounds_FastLoop_Absorb(void *state, unsigned int laneCount, const unsigned char *data, size_t dataByteLen);
-// either redefine or get rid of fastLoop for 24 rounds to preserve correctness
-
-// ARMv8-A SHA3 optimized implementations (from assembly)
-extern void KeccakP1600_ARMv8Asha3_Permute_12rounds(void *state);
-extern void KeccakP1600_ARMv8Asha3_Permute_24rounds(void *state);
-// extern size_t KeccakP1600_ARMv8Asha3_12rounds_FastLoop_Absorb(void *state, unsigned int laneCount, const unsigned char *data, size_t dataByteLen);
-extern void KeccakP1600times2_ARMv8Asha3_Permute_12rounds(void *state);
-extern void KT128_ARMv8Asha3_Process2Leaves(const unsigned char *input, unsigned char *output);
-extern void KT256_ARMv8Asha3_Process2Leaves(const unsigned char *input, unsigned char *output);
-
-/* ---------------------------------------------------------------- */
-/* Dispatch functions for Keccak-p[1600] */
-/* ---------------------------------------------------------------- */
-
-// #undef KeccakP1600_GetImplementation()
-const char * KeccakP1600_GetImplementation() {
-    SetArmProcessorCapabilities();
-    if (enableARM_SHA3) {
-        return "ARMv8-A+SHA3 optimized implementation";
-    } else {
-        return "Generic ARM64 implementation";
-    }
-}
-
-void KeccakP1600_Initialize(KeccakP1600times2_ARMv8Asha3 *state) {
-    SetArmProcessorCapabilities();
-    KeccakP1600_opt64_Initialize(state);  // Both use same initialization
-}
-
-void KeccakP1600_AddByte(KeccakP1600times2_ARMv8Asha3 *state, unsigned char data, unsigned int offset) {
-    SetArmProcessorCapabilities();
-    KeccakP1600_opt64_AddByte(state, data, offset);  // Both use same AddByte
-}
-
-void KeccakP1600_AddBytes(KeccakP1600times2_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length) {
-    SetArmProcessorCapabilities();
-    KeccakP1600_opt64_AddBytes(state, data, offset, length);  // Both use same AddBytes
-}
-
-void KeccakP1600_Permute_12rounds(KeccakP1600times2_ARMv8Asha3 *state) {
-    SetArmProcessorCapabilities();
-    if (enableARM_SHA3) {
-        KeccakP1600_ARMv8Asha3_Permute_12rounds(state);
-    } else {
-        KeccakP1600_opt64_Permute_12rounds(state);
-    }
-}
-
-void KeccakP1600_Permute_24rounds(KeccakP1600times2_ARMv8Asha3 *state) {
-    SetArmProcessorCapabilities();
-    if (enableARM_SHA3) {
-        KeccakP1600_ARMv8Asha3_Permute_24rounds(state);
-    } else {
-        KeccakP1600_opt64_Permute_24rounds(state);
-    }
-    // later change KangarooTwelve label to avoid confusion (24 rounds, not 12)
-}
-
-void KeccakP1600_ExtractBytes(const KeccakP1600times2_ARMv8Asha3 *state, unsigned char *data, unsigned int offset, unsigned int length) {
-    SetArmProcessorCapabilities();
-    KeccakP1600_opt64_ExtractBytes(state, data, offset, length);  // Both use same ExtractBytes
-}
-
-// #undef KeccakP1600_12rounds_FastLoop_Absorb // otherwise error
-// size_t KeccakP1600_12rounds_FastLoop_Absorb(KeccakP1600_ARMv8Asha3 *state, unsigned int laneCount, const unsigned char *data, size_t dataByteLen) {
-//     SetArmProcessorCapabilities();
-//     if (enableARM_SHA3) {
-//         return KeccakP1600_ARMv8Asha3_12rounds_FastLoop_Absorb(state, laneCount, data, dataByteLen);
-//     } else {
-//         return KeccakP1600_opt64_12rounds_FastLoop_Absorb(state, laneCount, data, dataByteLen);
-//     }
-// }
+// permutation functions (from assembly)
+extern void KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds(KeccakP1600times2_ARMv8Asha3 *states);
+extern void KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds(KeccakP1600times2_ARMv8Asha3 *states);
+extern void KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds(KeccakP1600times2_ARMv8Asha3 *states);
+extern void KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds(KeccakP1600times2_ARMv8Asha3 *states);
 
 /* ---------------------------------------------------------------- */
 /* Dispatch functions for Keccak-p[1600]×2 */
 /* ---------------------------------------------------------------- */
 
-int KeccakP1600times2_IsAvailable() {
+int KeccakP1600times2_IsAvailable(void) {
     SetArmProcessorCapabilities();
-    return enableARM_SHA3;
+    if (enableARM_SHA3) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
-const char * KeccakP1600times2_GetImplementation() {
+int KeccakP1600times2_GetFeatures(void) {
+    SetArmProcessorCapabilities();
+    if (enableARM_SHA3) {
+        return PlSnP_Feature_Main;
+    }
+    else {
+        return 0;
+    }
+}
+
+const char *KeccakP1600times2_GetImplementation(void) {
     SetArmProcessorCapabilities();
     if (enableARM_SHA3) {
         return "ARMv8-A+SHA3 optimized implementation";
-    } else {
+    }
+    else {
         return "";
     }
 }
 
-void KeccakP1600times2_Permute_12rounds(void *state) {
+void KeccakP1600times2_StaticInitialize(void) {
+    SetArmProcessorCapabilities();
+}
+
+void KeccakP1600times2_InitializeAll(KeccakP1600times2_ARMv8Asha3 *states) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_InitializeAll(states);
+}
+
+void KeccakP1600times2_AddByte(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned char data, unsigned int offset) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_AddByte(states, instanceIndex, data, offset);
+}
+
+void KeccakP1600times2_AddBytes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_AddBytes(states, instanceIndex, data, offset, length);
+}
+
+void KeccakP1600times2_AddLanesAll(KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *data, unsigned int laneCount, unsigned int laneOffset) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_AddLanesAll(states, data, laneCount, laneOffset);
+}
+
+void KeccakP1600times2_OverwriteBytes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_OverwriteBytes(states, instanceIndex, data, offset, length);
+}
+
+void KeccakP1600times2_OverwriteLanesAll(KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *data, unsigned int laneCount, unsigned int laneOffset) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_OverwriteLanesAll(states, data, laneCount, laneOffset);
+}
+
+void KeccakP1600times2_OverwriteWithZeroes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned int byteCount) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_OverwriteWithZeroes(states, instanceIndex, byteCount);
+}
+
+void KeccakP1600times2_ExtractBytes(const KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned char *data, unsigned int offset, unsigned int length) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_ExtractBytes(states, instanceIndex, data, offset, length);
+}
+
+void KeccakP1600times2_ExtractLanesAll(const KeccakP1600times2_ARMv8Asha3 *states, unsigned char *data, unsigned int laneCount, unsigned int laneOffset) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_ExtractLanesAll(states, data, laneCount, laneOffset);
+}
+
+void KeccakP1600times2_ExtractAndAddBytes(const KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_ExtractAndAddBytes(states, instanceIndex, input, output, offset, length);
+}
+
+void KeccakP1600times2_ExtractAndAddLanesAll(const KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *input, unsigned char *output, unsigned int laneCount, unsigned int laneOffset) {
+    SetArmProcessorCapabilities();
+    KeccakP1600times2_opt64_ExtractAndAddLanesAll(states, input, output, laneCount, laneOffset);
+}
+
+void KeccakP1600times2_PermuteAll_4rounds(KeccakP1600times2_ARMv8Asha3 *states) {
     SetArmProcessorCapabilities();
     if (enableARM_SHA3) {
-        KeccakP1600times2_ARMv8Asha3_Permute_12rounds(state);
+        KeccakP1600times2_ARMv8Asha3_PermuteAll_4rounds(states);
     }
 }
 
-void KT128_Process2Leaves(const unsigned char *input, unsigned char *output) {
+void KeccakP1600times2_PermuteAll_6rounds(KeccakP1600times2_ARMv8Asha3 *states) {
     SetArmProcessorCapabilities();
     if (enableARM_SHA3) {
-        KT128_ARMv8Asha3_Process2Leaves(input, output);
+        KeccakP1600times2_ARMv8Asha3_PermuteAll_6rounds(states);
     }
 }
 
-void KT256_Process2Leaves(const unsigned char *input, unsigned char *output) {
+void KeccakP1600times2_PermuteAll_12rounds(KeccakP1600times2_ARMv8Asha3 *states) {
     SetArmProcessorCapabilities();
     if (enableARM_SHA3) {
-        KT256_ARMv8Asha3_Process2Leaves(input, output);
+        KeccakP1600times2_ARMv8Asha3_PermuteAll_12rounds(states);
     }
 }
 
-/* ---------------------------------------------------------------- */
-/* Keccak-p[1600]×4 (not available on ARM) */
-/* ---------------------------------------------------------------- */
-
-int KeccakP1600times4_IsAvailable() {
-    return 0;
+void KeccakP1600times2_PermuteAll_24rounds(KeccakP1600times2_ARMv8Asha3 *states) {
+    SetArmProcessorCapabilities();
+    if (enableARM_SHA3) {
+        KeccakP1600times2_ARMv8Asha3_PermuteAll_24rounds(states);
+    }
 }
 
-const char * KeccakP1600times4_GetImplementation() {
-    return "";
-}
-
-void KT128_Process4Leaves(const unsigned char *input, unsigned char *output) {
-    (void)input;
-    (void)output;
-}
-
-void KT256_Process4Leaves(const unsigned char *input, unsigned char *output) {
-    (void)input;
-    (void)output;
-}
-
-/* ---------------------------------------------------------------- */
-/* Keccak-p[1600]×8 (not available on ARM) */
-/* ---------------------------------------------------------------- */
-
-int KeccakP1600times8_IsAvailable() {
-    return 0;
-}
-
-const char * KeccakP1600times8_GetImplementation() {
-    return "";
-}
-
-void KT128_Process8Leaves(const unsigned char *input, unsigned char *output) {
-    (void)input;
-    (void)output;
-}
-
-void KT256_Process8Leaves(const unsigned char *input, unsigned char *output) {
-    (void)input;
-    (void)output;
-}
 
 /* ---------------------------------------------------------------- */
 /* Optional API for disabling CPU features */

@@ -22,8 +22,6 @@ Please refer to the XKCP for more details.
 #ifndef _KeccakP_1600_times2_SnP_h_
 #define _KeccakP_1600_times2_SnP_h_
 
-// #define SnP_Permute KeccakP1600_Permute_12rounds // omit (nonexistent) 24-rounds for now, remove later
-
 #include <stdint.h>
 #include "align.h"
 #include "PlSnP-common.h"
@@ -35,62 +33,30 @@ typedef struct {
 
 typedef KeccakP1600times2_ARMv8Asha3 KeccakP1600times2_states;
 
-const char *KeccakP1600times2_GetImplementation(); // call from runtime Dispatch instead of defining here
-#define KeccakP1600times2_GetFeatures()                   (SnP_Feature_Main)
+const char *KeccakP1600times2_GetImplementation(void); // call from runtime dispatch
+int KeccakP1600times2_GetFeatures(void);
 
-/* Keccak-p[1600] */
+/* Keccak-p[1600]x2 */
 
-#define KeccakP1600_stateSizeInBytes    200
+#define KeccakP1600_stateSizeInBytes    400
 #define KeccakP1600_stateAlignment      8
-// #define KeccakP1600_12rounds_FastLoop_supported
 
 void KeccakP1600times2_StaticInitialize( void );
-void KeccakP1600times2_InitializeAll(KeccakP1600times2_ARMv8Asha3 *state);
-void KeccakP1600times2_AddByte(KeccakP1600times2_ARMv8Asha3 *state, unsigned int instanceIndex, unsigned char data, unsigned int offset);
-void KeccakP1600times2_AddBytes(KeccakP1600times2_ARMv8Asha3 *state, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length);
+void KeccakP1600times2_InitializeAll(KeccakP1600times2_ARMv8Asha3 *states);
+void KeccakP1600times2_AddByte(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned char data, unsigned int offset);
+void KeccakP1600times2_AddBytes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length);
+void KeccakP1600times2_OverwriteBytes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length);
 void KeccakP1600times2_AddLanesAll(KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *data, unsigned int laneCount, unsigned int laneOffset);
-void KeccakP1600times2_OverwriteBytes(KeccakP1600times2_ARMv8Asha3 *state, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length);
 void KeccakP1600times2_OverwriteLanesAll(KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *data, unsigned int laneCount, unsigned int laneOffset);
-void KeccakP1600times2_OverwriteWithZeroes(KeccakP1600times2_ARMv8Asha3 *state, unsigned int byteCount);
+void KeccakP1600times2_OverwriteWithZeroes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned int byteCount);
 void KeccakP1600times2_PermuteAll_4rounds(KeccakP1600times2_ARMv8Asha3 *states);
 void KeccakP1600times2_PermuteAll_6rounds(KeccakP1600times2_ARMv8Asha3 *states);
 void KeccakP1600times2_PermuteAll_12rounds(KeccakP1600times2_ARMv8Asha3 *states);
 void KeccakP1600times2_PermuteAll_24rounds(KeccakP1600times2_ARMv8Asha3 *states);
-void KeccakP1600times2_ExtractBytes(const KeccakP1600times2_ARMv8Asha3 *state, unsigned int instanceIndex, unsigned char *data, unsigned int offset, unsigned int length);
+void KeccakP1600times2_ExtractBytes(const KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned char *data, unsigned int offset, unsigned int length);
 void KeccakP1600times2_ExtractLanesAll(const KeccakP1600times2_ARMv8Asha3 *states, unsigned char *data, unsigned int laneCount, unsigned int laneOffset);
-void KeccakP1600times2_ExtractAndAddBytes(const KeccakP1600times2_ARMv8Asha3 *state, unsigned int instanceIndex, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length);
+void KeccakP1600times2_ExtractAndAddBytes(const KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length);
 void KeccakP1600times2_ExtractAndAddLanesAll(const KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *input, unsigned char *output, unsigned int laneCount, unsigned int laneOffset);
-
-// size_t KeccakP1600_12rounds_FastLoop_Absorb(KeccakP1600_ARMv8Asha3_times2 *state, unsigned int laneCount, const unsigned char *data, size_t dataByteLen);
-
-// Keccak-p1600 x2
-
-
-// /* Keccak-p[1600]×2 */
-// int KeccakP1600times2_IsAvailable();
-// const char * KeccakP1600times2_GetImplementation();
-// void KeccakP1600times2_Permute_12rounds(void *state);
-// void KT128_Process2Leaves(const unsigned char *input, unsigned char *output);
-// void KT256_Process2Leaves(const unsigned char *input, unsigned char *output);
-
-// /* Keccak-p[1600]×4 */
-
-// int KeccakP1600times4_IsAvailable();
-// const char * KeccakP1600times4_GetImplementation();
-
-// /* Keccak-p[1600]×8 */
-
-// int KeccakP1600times8_IsAvailable();
-// const char * KeccakP1600times8_GetImplementation();
-
-// #define KeccakF1600times2_FastLoop_Absorb(...)                0
-// #define KeccakP1600times2_12rounds_FastLoop_Absorb(...)       0
-// #define KeccakP1600times2_ODDuplexingFastInOut(...)           0
-// #define KeccakP1600times2_12rounds_ODDuplexingFastInOut(...)  0
-// #define KeccakP1600times2_ODDuplexingFastOut(...)             0
-// #define KeccakP1600times2_12rounds_ODDuplexingFastOut(...)    0
-// #define KeccakP1600times2_ODDuplexingFastIn(...)              0
-// #define KeccakP1600times2_12rounds_ODDuplexingFastIn(...)     0
 
 #define KeccakF1600times2_FastLoop_Absorb(...)          0
 #define KeccakP1600times2_12rounds_FastLoop_Absorb(...) 0

@@ -21,239 +21,125 @@ Please refer to the XKCP for more details.
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <KeccakP-1600-times2-SnP.h>
+#include <KeccakP-1600-SnP.h>
+#include "KeccakP-1600-times2-SnP.h"
 
-// const char * KeccakP1600_GetImplementation()
-// {
-//     return "ARMv8-A+SHA3 optimized implementation";
-// }
-
-/* ---------------------------------------------------------------- */
-
-void KeccakP1600_opt64_Initialize(void *state)
-{
-    memset(state, 0, 200);
-}
+#define LANE_LENGTH_IN_BYTES 8
+#define NO_LENGTH 25
+#define NO_STATES 2
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_AddBytesInLane(void *state, unsigned int lanePosition, const unsigned char *data, unsigned int offset, unsigned int length)
-{
-    uint64_t lane;
-
-    if (length == 0)
-        return;
-    if (length == 1)
-        lane = data[0];
-    else {
-        lane = 0;
-        memcpy(&lane, data, length);
-    }
-    lane <<= offset*8;
-    ((uint64_t*)state)[lanePosition] ^= lane;
-}
-
-/* ---------------------------------------------------------------- */
-
-static void KeccakP1600_opt64_AddLanes(void *state, const unsigned char *data, unsigned int laneCount)
-{
-    unsigned int i = 0;
-
-    for( ; (i+8)<=laneCount; i+=8) {
-        ((uint64_t*)state)[i+0] ^= ((uint64_t*)data)[i+0];
-        ((uint64_t*)state)[i+1] ^= ((uint64_t*)data)[i+1];
-        ((uint64_t*)state)[i+2] ^= ((uint64_t*)data)[i+2];
-        ((uint64_t*)state)[i+3] ^= ((uint64_t*)data)[i+3];
-        ((uint64_t*)state)[i+4] ^= ((uint64_t*)data)[i+4];
-        ((uint64_t*)state)[i+5] ^= ((uint64_t*)data)[i+5];
-        ((uint64_t*)state)[i+6] ^= ((uint64_t*)data)[i+6];
-        ((uint64_t*)state)[i+7] ^= ((uint64_t*)data)[i+7];
-    }
-    for( ; (i+4)<=laneCount; i+=4) {
-        ((uint64_t*)state)[i+0] ^= ((uint64_t*)data)[i+0];
-        ((uint64_t*)state)[i+1] ^= ((uint64_t*)data)[i+1];
-        ((uint64_t*)state)[i+2] ^= ((uint64_t*)data)[i+2];
-        ((uint64_t*)state)[i+3] ^= ((uint64_t*)data)[i+3];
-    }
-    for( ; (i+2)<=laneCount; i+=2) {
-        ((uint64_t*)state)[i+0] ^= ((uint64_t*)data)[i+0];
-        ((uint64_t*)state)[i+1] ^= ((uint64_t*)data)[i+1];
-    }
-    if (i<laneCount) {
-        ((uint64_t*)state)[i+0] ^= ((uint64_t*)data)[i+0];
+void KeccakP1600times2_opt64_InitializeAll(KeccakP1600times2_ARMv8Asha3 *states){
+    unsigned int i;
+    for (i = 0; i < 400; i++){
+        ((unsigned char*)(states))[i] = 0;
     }
 }
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_AddByte(void *state, unsigned char byte, unsigned int offset)
-{
-    ((unsigned char*)(state))[offset] ^= byte;
+// HELPER FUNCTION: given an offset and state index, return index position in bytes
+static size_t byteIndex(unsigned int instanceIndex, unsigned int offset){
+    return 16 * (offset / 8) + 8 * instanceIndex + (offset % 8);
 }
 
 /* ---------------------------------------------------------------- */
 
-// void KeccakP1600_ExtractAndAddBytes(const void *state, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length)
-// {
-//     unsigned int i;
-
-//     #if DEBUG
-//     assert(offset < 200);
-//     assert(offset+length <= 200);
-//     #endif
-//     for(i=0; i<length; i++)
-//         output[i] = input[i] ^ state->A[offset+i];
-// }
-
-/* ---------------------------------------------------------------- */
-
-#define SnP_AddBytes(state, data, offset, length, SnP_AddLanes, SnP_AddBytesInLane, SnP_laneLengthInBytes) \
-    { \
-        if ((offset) == 0) { \
-            SnP_AddLanes(state, data, (length)/SnP_laneLengthInBytes); \
-            SnP_AddBytesInLane(state, \
-                (length)/SnP_laneLengthInBytes, \
-                (data)+((length)/SnP_laneLengthInBytes)*SnP_laneLengthInBytes, \
-                0, \
-                (length)%SnP_laneLengthInBytes); \
-        } \
-        else { \
-            unsigned int _sizeLeft = (length); \
-            unsigned int _lanePosition = (offset)/SnP_laneLengthInBytes; \
-            unsigned int _offsetInLane = (offset)%SnP_laneLengthInBytes; \
-            const unsigned char *_curData = (data); \
-            while(_sizeLeft > 0) { \
-                unsigned int _bytesInLane = SnP_laneLengthInBytes - _offsetInLane; \
-                if (_bytesInLane > _sizeLeft) \
-                    _bytesInLane = _sizeLeft; \
-                SnP_AddBytesInLane(state, _lanePosition, _curData, _offsetInLane, _bytesInLane); \esInLane; \
-                _lanePosition++; \
-                _offsetInLane = 0; \
-                _curData += _bytesInLane; \
-            } \
-        } \
-    }
-
-void KeccakP1600_opt64_AddBytes(void *state, const unsigned char *data, unsigned int offset, unsigned int length)
-{
-    SnP_AddBytes(state, data, offset, length, KeccakP1600_opt64_AddLanes, KeccakP1600_opt64_AddBytesInLane, 8);
+void KeccakP1600times2_opt64_AddByte(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned char byte, unsigned int offset){
+    ((unsigned char *)states)[byteIndex(instanceIndex, offset)] ^= byte; 
 }
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600times2_OverwriteBytes(KeccakP1600times2_ARMv8Asha3 *state, const unsigned char *data, unsigned int offset, unsigned int length)
-{
-    #if DEBUG
-    assert(offset < 200);
-    assert(offset+length <= 200);
-    #endif
-    memcpy(state->A+offset, data, length);
-}
-
-/* ---------------------------------------------------------------- */
-
-void KeccakP1600_opt64_ExtractBytesInLane(const KeccakP1600times2_ARMv8Asha3 *state, unsigned int lanePosition, unsigned char *data, unsigned int offset, unsigned int length)
-{
-    uint64_t lane = ((uint64_t*)state)[lanePosition];
-    {
-        uint64_t lane1[1];
-        lane1[0] = lane;
-        memcpy(data, (uint8_t*)lane1+offset, length);
+void KeccakP1600times2_opt64_AddBytes(KeccakP1600times2_ARMv8Asha3 *states,unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length){
+    unsigned int i;
+    for (i = 0; i < length; i++) {
+        KeccakP1600times2_opt64_AddByte(states, instanceIndex, data[i], offset + i);
     }
 }
 
 /* ---------------------------------------------------------------- */
 
-void KeccakP1600_opt64_ExtractLanes(const KeccakP1600times2_ARMv8Asha3 *state, unsigned char *data, unsigned int laneCount)
-{
-    memcpy(data, state, laneCount*8);
-}
-
-/* ---------------------------------------------------------------- */
-
-#define SnP_ExtractBytes(state, data, offset, length, SnP_ExtractLanes, SnP_ExtractBytesInLane, SnP_laneLengthInBytes) \
-    { \
-        if ((offset) == 0) { \
-            SnP_ExtractLanes(state, data, (length)/SnP_laneLengthInBytes); \
-            SnP_ExtractBytesInLane(state, \
-                (length)/SnP_laneLengthInBytes, \
-                (data)+((length)/SnP_laneLengthInBytes)*SnP_laneLengthInBytes, \
-                0, \
-                (length)%SnP_laneLengthInBytes); \
-        } \
-        else { \
-            unsigned int _sizeLeft = (length); \
-            unsigned int _lanePosition = (offset)/SnP_laneLengthInBytes; \
-            unsigned int _offsetInLane = (offset)%SnP_laneLengthInBytes; \
-            unsigned char *_curData = (data); \
-            while(_sizeLeft > 0) { \
-                unsigned int _bytesInLane = SnP_laneLengthInBytes - _offsetInLane; \
-                if (_bytesInLane > _sizeLeft) \
-                    _bytesInLane = _sizeLeft; \
-                SnP_ExtractBytesInLane(state, _lanePosition, _curData, _offsetInLane, _bytesInLane); \
-                _sizeLeft -= _bytesInLane; \
-                _lanePosition++; \
-                _offsetInLane = 0; \
-                _curData += _bytesInLane; \
-            } \
-        } \
+void KeccakP1600times2_opt64_AddLanesAll(KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *data, unsigned int laneCount, unsigned int laneOffset){
+    unsigned int lane;
+    for (lane = 0; lane < laneCount; lane++) {
+        KeccakP1600times2_opt64_AddBytes(states, 0, data + 8 * lane, 8 * lane, 8);
+        KeccakP1600times2_opt64_AddBytes(states, 1, data + 8 * (laneOffset + lane), 8 * lane, 8);
     }
-
-void KeccakP1600_opt64_ExtractBytes(const KeccakP1600times2_ARMv8Asha3 *state, unsigned char *data, unsigned int offset, unsigned int length)
-{
-    SnP_ExtractBytes(state, data, offset, length, KeccakP1600_opt64_ExtractLanes, KeccakP1600_opt64_ExtractBytesInLane, 8);
 }
 
 /* ---------------------------------------------------------------- */
 
-// /* Keccak-p[1600]×2 */
+void KeccakP1600times2_opt64_OverwriteBytes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *data, unsigned int offset, unsigned int length){
+    unsigned int i;
+    for (i = 0; i < length; i++) {
+        size_t index = byteIndex(instanceIndex, offset + i);
+        ((unsigned char *)states)[index] = data[i];
+    }
+}
 
-// int KeccakP1600times2_IsAvailable()
-// {
-//     return 1;
-// }
+/* ---------------------------------------------------------------- */
 
-// const char * KeccakP1600times2_GetImplementation()
-// {
-//     return "ARMv8-A+SHA3 optimized implementation";
-// }
+void KeccakP1600times2_opt64_OverwriteLanesAll(KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *data, unsigned int laneCount, unsigned int laneOffset){
+    unsigned int lane;
+    for (lane = 0; lane < laneCount; lane++){
+        KeccakP1600times2_opt64_OverwriteBytes(states, 0, data + 8 * lane, 8 * lane, 8);
+        KeccakP1600times2_opt64_OverwriteBytes(states, 1, data + 8 * (laneOffset + lane), 8 * lane, 8);
+    }
+}
 
-// /* Keccak-p[1600]×4 */
+/* ---------------------------------------------------------------- */
 
-// int KeccakP1600times4_IsAvailable()
-// {
-//     return 0;
-// }
+void KeccakP1600times2_opt64_OverwriteWithZeroes(KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned int byteCount){
+    unsigned int bytePos;
+    for (bytePos = 0; bytePos < byteCount; bytePos++) {
+        size_t index = byteIndex(instanceIndex, bytePos);
+        ((unsigned char *)states)[index] = 0;
+    }
+}
 
-// const char * KeccakP1600times4_GetImplementation()
-// {
-//     return "";
-// }
+/* ---------------------------------------------------------------- */
 
-// void KT128_Process4Leaves(const unsigned char *input, unsigned char *output)
-// {
-// }
+void KeccakP1600times2_opt64_ExtractBytes(const KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, unsigned char *data, unsigned int offset, unsigned int length){
+    unsigned int i;
+    const unsigned char *stateBytes = (const unsigned char *)states;
+    for (i = 0; i < length; i++) {
+        size_t index = byteIndex(instanceIndex, offset + i);
+        data[i] = stateBytes[index];
+    }
+}
 
-// void KT256_Process4Leaves(const unsigned char *input, unsigned char *output)
-// {
-// }
+/* ---------------------------------------------------------------- */
 
-// /* Keccak-p[1600]×8 */
+void KeccakP1600times2_opt64_ExtractAndAddBytes(const KeccakP1600times2_ARMv8Asha3 *states, unsigned int instanceIndex, const unsigned char *input, unsigned char *output, unsigned int offset, unsigned int length){
+    unsigned int i;
+    const unsigned char *stateBytes = (const unsigned char *)states;
+    for (i = 0; i < length; i++) {
+        size_t index = byteIndex(instanceIndex, offset + i);
+        output[i] = input[i] ^ stateBytes[index]; // XOR == add
+    }
+}
 
-// int KeccakP1600times8_IsAvailable()
-// {
-//     return 0;
-// }
+/* ---------------------------------------------------------------- */
 
-// const char * KeccakP1600times8_GetImplementation()
-// {
-//     return "";
-// }
+void KeccakP1600times2_opt64_ExtractLanesAll(const KeccakP1600times2_ARMv8Asha3 *states, unsigned char *data, unsigned int laneCount, unsigned int laneOffset){
+    unsigned int lane;
+    for (lane = 0; lane < laneCount; lane++){
+        KeccakP1600times2_opt64_ExtractBytes(states, 0, data + 8 * lane, 8 * lane, 8);
+        KeccakP1600times2_opt64_ExtractBytes(states, 1, data + 8 * (laneOffset + lane), 8 * lane, 8);
+    }
+}
 
-// void KT128_Process8Leaves(const unsigned char *input, unsigned char *output)
-// {
-// }
+/* ---------------------------------------------------------------- */
 
-// void KT256_Process8Leaves(const unsigned char *input, unsigned char *output)
-// {
-// }
+void KeccakP1600times2_opt64_ExtractAndAddLanesAll(const KeccakP1600times2_ARMv8Asha3 *states, const unsigned char *input, unsigned char *output, unsigned int laneCount, unsigned int laneOffset){
+    unsigned int lane;
+    for (lane = 0; lane < laneCount; lane++) {
+        KeccakP1600times2_opt64_ExtractAndAddBytes(states, 0, input + 8 * lane, output + 8 * lane, 8 * lane, 8);
+        KeccakP1600times2_opt64_ExtractAndAddBytes(states, 1, input + 8 * (laneOffset + lane), output + 8 * (laneOffset + lane), 8 * lane, 8);
+    }
+}
+
+
+
