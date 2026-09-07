@@ -297,12 +297,12 @@ The fragments below allow to select the desired implementation of the permutatio
         <h>lib/common/PlSnP-common.h</h>
     </fragment>
 
-    <!-- <fragment name="K1600x2-ARMv82" inherits="K1600x2 optimized">
+    <fragment name="K1600x2-ARMv82" inherits="K1600x2 optimized">
         <c>lib/low/KeccakP-1600-times2/ARMv82/KeccakP-1600-times2-opt64.c</c>
         <s gcc="-march=armv8.4-a+sha3">lib/low/KeccakP-1600-times2/ARMv82/KeccakP-1600-times2-ARMv82.S</s>
         <c>lib/low/KeccakP-1600-times2/ARMv82/KeccakP-1600-times2-runtimeDispatch.c</c>
         <h>lib/low/KeccakP-1600-times2/ARMv82/KeccakP-1600-times2-SnP.h</h>
-    </fragment> -->
+    </fragment>
 
     <fragment name="K1600x2-SIMD128-pure" inherits="optimized K1600x2">
         <h>lib/low/KeccakP-1600-times2/SIMD128/KeccakP-1600-times2-SIMD128.h</h>

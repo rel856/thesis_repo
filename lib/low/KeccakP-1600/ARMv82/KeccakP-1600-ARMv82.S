@@ -123,11 +123,11 @@ KeccakP1600_ARMv8Asha3_Permute_24rounds_internal:
 .endif
 
 KeccakP1600_ARMv8Asha3_Permute_Nrounds_internal:
-    mov     x9, x1
-    adr     x10, iotas
-    mov     x11, #24
-    sub     x11, x11, x9
-    add     x10, x10, x11, lsl #3
+    mov     x9, x1                  // move no. rounds from x1 to x9
+    adr     x10, iotas              // store address to iota round constants in x10
+    mov     x11, #24                // store constant 24 in x11
+    sub     x11, x11, x9            // subtract no. rounds from 24, store result in x11
+    add     x10, x10, x11, lsl #3   // multiply (24 - no. rounds) by 8, add it to the initial address of the round constants in x10
     b       .Loop_ce
 
 ////////////////////////////////////////////////////////////
