@@ -6,8 +6,13 @@
       "type": "lldb",
       "request": "launch",
       "args": [],
+<<<<<<< HEAD
       "cwd": "/Users/aurelionandika/Documents/uni/2526/bthes/XKCP/util/KeccakSum",
       "program": "/Users/aurelionandika/Documents/uni/2526/bthes/XKCP/util/KeccakSum/build/Debug/outDebug"
+=======
+      "cwd": "/Users/aurelionandika/Documents/uni/2526/bthes/temp_dir/XKCP/lib/low/KeccakP-1600-times2/ARMv82",
+      "program": "/Users/aurelionandika/Documents/uni/2526/bthes/temp_dir/XKCP/lib/low/KeccakP-1600-times2/ARMv82/build/Debug/outDebug"
+>>>>>>> master
     }
   ]
 }
